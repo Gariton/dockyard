@@ -1,0 +1,14 @@
+[Unit]
+Description=Dockyard Agent
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/dockyard-agent -config /etc/dockyard-agent/config.yaml
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

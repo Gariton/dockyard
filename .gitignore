@@ -1,0 +1,36 @@
+# macOS
+.DS_Store
+
+# local environment
+.env
+.env.*
+!.env.example
+*.local.yaml
+
+# Dockyard local runtime
+.agent-work/
+
+# Next.js app artifacts
+dockyard/node_modules/
+dockyard/.next/
+dockyard/out/
+dockyard/build/
+dockyard/coverage/
+dockyard/.env
+dockyard/.env.*
+!dockyard/.env.example
+dockyard/next-env.d.ts
+dockyard/*.tsbuildinfo
+
+# Go agent artifacts
+dockyard-agent/.bin/
+dockyard-agent/dockyard-agent
+dockyard-agent/*.test
+dockyard-agent/coverage.out
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

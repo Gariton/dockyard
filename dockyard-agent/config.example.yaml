@@ -1,0 +1,5 @@
+agent_id: "server-01"
+dockyard_url: "http://localhost:3000"
+agent_token: "dev-agent-token"
+work_dir: "/opt/dockyard/apps"
+heartbeat_interval_seconds: 30
