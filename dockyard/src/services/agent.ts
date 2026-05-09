@@ -3,13 +3,10 @@ import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
   agentJobs,
-  appEnvVars,
-  apps,
   deploymentLogs,
   deployments,
   servers,
 } from "@/db/schema";
-import { decryptValue } from "@/lib/crypto";
 import type { deploymentLogSchema, jobCompleteSchema } from "@/lib/validation";
 import { makeId } from "@/services/ids";
 import { upsertHeartbeat, type HeartbeatInput } from "@/services/servers";
@@ -55,38 +52,10 @@ export async function pickNextJob(agentId: string) {
       .set({ status: "running", startedAt: new Date() })
       .where(eq(deployments.id, job.deploymentId));
 
-    const [deployment] = await tx
-      .select()
-      .from(deployments)
-      .where(eq(deployments.id, job.deploymentId))
-      .limit(1);
-
-    const [app] = await tx
-      .select()
-      .from(apps)
-      .where(eq(apps.id, deployment.appId))
-      .limit(1);
-
-    const envRows = await tx
-      .select()
-      .from(appEnvVars)
-      .where(eq(appEnvVars.appId, app.id));
-
-    const env = Object.fromEntries(
-      envRows.map((row) => [row.key, decryptValue(row.encryptedValue)])
-    );
-
-    const healthcheckUrl = `http://localhost:${app.publicPort}${app.healthcheckPath}`;
-
     return {
+      ...(job.payloadJson as Record<string, unknown>),
       jobId: job.id,
-      deploymentId: deployment.id,
-      appName: app.name,
-      gitUrl: app.gitUrl,
-      branch: app.branch,
-      composeFile: app.composeFilePath,
-      env,
-      healthcheckUrl,
+      deploymentId: job.deploymentId,
     };
   });
 }

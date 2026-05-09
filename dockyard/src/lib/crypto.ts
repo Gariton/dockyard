@@ -44,3 +44,11 @@ export function decryptValue(payload: string) {
     decipher.final(),
   ]).toString("utf8");
 }
+
+export function encryptJson(value: unknown) {
+  return encryptValue(JSON.stringify(value));
+}
+
+export function decryptJson<T = unknown>(payload: string): T {
+  return JSON.parse(decryptValue(payload)) as T;
+}

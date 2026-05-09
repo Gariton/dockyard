@@ -38,26 +38,46 @@ export function AppForm({ servers }: { servers: Server[] }) {
             <Input id="branch" name="branch" defaultValue="main" required />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="composeFilePath">Compose file path</Label>
+            <Label htmlFor="composeFilePath">Compose file path (deprecated)</Label>
             <Input id="composeFilePath" name="composeFilePath" defaultValue="compose.yaml" required />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="publicPort">Public port</Label>
-            <Input id="publicPort" name="publicPort" type="number" min={1} max={65535} required />
+            <Label htmlFor="publicPort">Host port</Label>
+            <Input
+              id="publicPort"
+              name="publicPort"
+              type="number"
+              min={1}
+              max={65535}
+              placeholder="auto"
+            />
           </label>
           <label className="flex flex-col gap-2">
             <Label htmlFor="healthcheckPath">Health check path</Label>
-            <Input id="healthcheckPath" name="healthcheckPath" defaultValue="/api/health" required />
+            <Input id="healthcheckPath" name="healthcheckPath" defaultValue="/" required />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="targetMode">Target selection</Label>
-            <select id="targetMode" name="targetMode" className={selectClass} defaultValue="auto">
-              <option value="auto">Auto</option>
-              <option value="manual">Manual</option>
+            <Label htmlFor="stateMode">State mode</Label>
+            <select id="stateMode" name="stateMode" className={selectClass} defaultValue="stateless">
+              <option value="stateless">Stateless</option>
+              <option value="stateful">Stateful</option>
             </select>
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="manualServerId">Manual server</Label>
+            <Label htmlFor="placementStrategy">Placement</Label>
+            <select
+              id="placementStrategy"
+              name="placementStrategy"
+              className={selectClass}
+              defaultValue="auto"
+            >
+              <option value="auto">Auto</option>
+              <option value="manual">Manual</option>
+              <option value="pinned">Pinned</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-2">
+            <Label htmlFor="manualServerId">Manual or initial pinned server</Label>
             <select id="manualServerId" name="manualServerId" className={selectClass} defaultValue="">
               <option value="">Select when manual</option>
               {servers.map((server) => (

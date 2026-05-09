@@ -71,12 +71,13 @@ func (a *Agent) pollJob(ctx context.Context) {
 	a.client.sendLog(ctx, job.DeploymentID, "info", fmt.Sprintf("Agent %s picked job %s.", a.cfg.AgentID, job.JobID))
 
 	commitSHA, err := runner.Deploy(ctx, a.cfg.WorkDir, runner.DeployJob{
-		AppName:        job.AppName,
-		GitURL:         job.GitURL,
-		Branch:         job.Branch,
-		ComposeFile:    job.ComposeFile,
-		Env:            job.Env,
-		HealthcheckURL: job.HealthcheckURL,
+		AppName:              job.AppName,
+		GitURL:               job.GitURL,
+		Branch:               job.Branch,
+		GeneratedComposeYAML: job.GeneratedComposeYAML,
+		Env:                  job.Env,
+		ManagedVolumes:       toRunnerManagedVolumes(job.ManagedVolumes),
+		HealthcheckURL:       job.HealthcheckURL,
 		Log: func(level, message string) {
 			a.client.sendLog(ctx, job.DeploymentID, level, message)
 		},
@@ -98,4 +99,17 @@ func (a *Agent) pollJob(ctx context.Context) {
 	}); err != nil {
 		log.Printf("complete job failed: %v", err)
 	}
+}
+
+func toRunnerManagedVolumes(volumes []managedVolume) []runner.ManagedVolume {
+	result := make([]runner.ManagedVolume, 0, len(volumes))
+	for _, volume := range volumes {
+		result = append(result, runner.ManagedVolume{
+			Name:      volume.Name,
+			Backend:   volume.Backend,
+			HostPath:  volume.HostPath,
+			MountPath: volume.MountPath,
+		})
+	}
+	return result
 }

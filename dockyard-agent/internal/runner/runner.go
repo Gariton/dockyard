@@ -15,19 +15,27 @@ import (
 )
 
 type DeployJob struct {
-	AppName        string
-	GitURL         string
-	Branch         string
-	ComposeFile    string
-	Env            map[string]string
-	HealthcheckURL string
-	Log            func(level, message string)
+	AppName              string
+	GitURL               string
+	Branch               string
+	GeneratedComposeYAML string
+	Env                  map[string]string
+	ManagedVolumes       []ManagedVolume
+	HealthcheckURL       string
+	Log                  func(level, message string)
+}
+
+type ManagedVolume struct {
+	Name      string
+	Backend   string
+	HostPath  string
+	MountPath string
 }
 
 var (
-	appNamePattern = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
-	relPathPattern = regexp.MustCompile(`^[A-Za-z0-9._/-]+$`)
-	envKeyPattern  = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+	appNamePattern    = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	volumeNamePattern = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	envKeyPattern     = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 )
 
 func EnsureWorkDir(workDir string) error {
@@ -41,6 +49,7 @@ func Deploy(ctx context.Context, workDir string, job DeployJob) (string, error) 
 
 	appDir := filepath.Join(workDir, job.AppName)
 	repoDir := filepath.Join(appDir, "repo")
+	generatedDir := filepath.Join(appDir, "generated")
 	if err := EnsureWorkDir(appDir); err != nil {
 		return "", err
 	}
@@ -63,12 +72,25 @@ func Deploy(ctx context.Context, workDir string, job DeployJob) (string, error) 
 		}
 	}
 
-	if err := writeEnvFile(filepath.Join(repoDir, ".env"), job.Env); err != nil {
+	if err := prepareManagedVolumes(job); err != nil {
+		return "", err
+	}
+	job.log("info", "Managed volumes prepared.")
+
+	if err := EnsureWorkDir(generatedDir); err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(filepath.Join(generatedDir, "compose.yaml"), []byte(job.GeneratedComposeYAML), 0o644); err != nil {
+		return "", err
+	}
+	job.log("info", "Generated compose.yaml written.")
+
+	if err := writeEnvFile(filepath.Join(generatedDir, ".env"), job.Env); err != nil {
 		return "", err
 	}
 	job.log("info", ".env generated.")
 
-	if err := run(ctx, repoDir, "docker", "compose", "--env-file", ".env", "-f", job.ComposeFile, "up", "-d", "--build"); err != nil {
+	if err := run(ctx, appDir, "docker", "compose", "-f", filepath.Join("generated", "compose.yaml"), "--env-file", filepath.Join("generated", ".env"), "-p", "dockyard_"+job.AppName, "up", "-d", "--build"); err != nil {
 		return "", err
 	}
 	job.log("info", "docker compose up completed.")
@@ -94,15 +116,47 @@ func validateJob(job DeployJob) error {
 	if job.Branch == "" || strings.Contains(job.Branch, "..") || strings.HasPrefix(job.Branch, "-") {
 		return fmt.Errorf("invalid branch %q", job.Branch)
 	}
-	if !relPathPattern.MatchString(job.ComposeFile) || filepath.IsAbs(job.ComposeFile) || strings.Contains(job.ComposeFile, "..") {
-		return fmt.Errorf("invalid compose file %q", job.ComposeFile)
-	}
 	if job.GitURL == "" {
 		return fmt.Errorf("git URL is required")
+	}
+	if strings.TrimSpace(job.GeneratedComposeYAML) == "" {
+		return fmt.Errorf("generated compose YAML is required")
 	}
 	if job.HealthcheckURL == "" {
 		return fmt.Errorf("healthcheck URL is required")
 	}
+	for _, volume := range job.ManagedVolumes {
+		if !volumeNamePattern.MatchString(volume.Name) {
+			return fmt.Errorf("invalid managed volume name %q", volume.Name)
+		}
+		if volume.Backend != "local" && volume.Backend != "nfs" {
+			return fmt.Errorf("invalid managed volume backend %q", volume.Backend)
+		}
+		if !strings.HasPrefix(volume.MountPath, "/") || strings.Contains(volume.MountPath, "..") {
+			return fmt.Errorf("invalid managed volume mount path %q", volume.MountPath)
+		}
+	}
+	return nil
+}
+
+func prepareManagedVolumes(job DeployJob) error {
+	for _, volume := range job.ManagedVolumes {
+		if volume.Backend != "local" {
+			continue
+		}
+		if volume.HostPath == "" {
+			return fmt.Errorf("local managed volume %s requires hostPath", volume.Name)
+		}
+		cleanHostPath := filepath.Clean(volume.HostPath)
+		expectedPrefix := filepath.Join("/opt/dockyard/volumes", job.AppName) + string(os.PathSeparator)
+		if !strings.HasPrefix(cleanHostPath, expectedPrefix) {
+			return fmt.Errorf("local managed volume %s hostPath is outside Dockyard volume root", volume.Name)
+		}
+		if err := os.MkdirAll(cleanHostPath, 0o750); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

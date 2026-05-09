@@ -7,6 +7,7 @@ import {
   real,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const serverStatusEnum = pgEnum("server_status", [
@@ -15,6 +16,32 @@ export const serverStatusEnum = pgEnum("server_status", [
 ]);
 
 export const targetModeEnum = pgEnum("target_mode", ["auto", "manual"]);
+
+export const stateModeEnum = pgEnum("state_mode", ["stateless", "stateful"]);
+
+export const placementStrategyEnum = pgEnum("placement_strategy", [
+  "auto",
+  "manual",
+  "pinned",
+]);
+
+export const managedVolumeBackendEnum = pgEnum("managed_volume_backend", [
+  "local",
+  "nfs",
+]);
+
+export const resourceProviderTypeEnum = pgEnum("resource_provider_type", [
+  "postgres",
+  "s3",
+  "elasticsearch",
+  "redis",
+]);
+
+export const resourceBindingStatusEnum = pgEnum("resource_binding_status", [
+  "pending",
+  "ready",
+  "failed",
+]);
 
 export const deploymentStatusEnum = pgEnum("deployment_status", [
   "queued",
@@ -67,12 +94,102 @@ export const apps = pgTable("apps", {
   publicPort: integer("public_port").notNull(),
   healthcheckPath: text("healthcheck_path").notNull(),
   targetMode: targetModeEnum("target_mode").notNull().default("auto"),
+  stateMode: stateModeEnum("state_mode").notNull().default("stateless"),
+  placementStrategy: placementStrategyEnum("placement_strategy").notNull().default("auto"),
   manualServerId: text("manual_server_id").references(() => servers.id, {
+    onDelete: "set null",
+  }),
+  pinnedServerId: text("pinned_server_id").references(() => servers.id, {
     onDelete: "set null",
   }),
   createdAt: now(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const appRuntimeConfigs = pgTable(
+  "app_runtime_configs",
+  {
+    id: text("id").primaryKey(),
+    appId: text("app_id")
+      .notNull()
+      .references(() => apps.id, { onDelete: "cascade" }),
+    buildContext: text("build_context").notNull().default("."),
+    dockerfilePath: text("dockerfile_path").notNull().default("Dockerfile"),
+    command: text("command"),
+    workingDir: text("working_dir"),
+    containerPort: integer("container_port").notNull().default(3000),
+    healthcheckPath: text("healthcheck_path").notNull().default("/"),
+    healthcheckIntervalSeconds: integer("healthcheck_interval_seconds").notNull().default(30),
+    healthcheckTimeoutSeconds: integer("healthcheck_timeout_seconds").notNull().default(5),
+    cpuLimit: text("cpu_limit"),
+    memoryLimitMb: integer("memory_limit_mb"),
+    restartPolicy: text("restart_policy").notNull().default("unless-stopped"),
+    createdAt: now(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("app_runtime_configs_app_id_idx").on(table.appId)]
+);
+
+export const appManagedVolumes = pgTable(
+  "app_managed_volumes",
+  {
+    id: text("id").primaryKey(),
+    appId: text("app_id")
+      .notNull()
+      .references(() => apps.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    mountPath: text("mount_path").notNull(),
+    backend: managedVolumeBackendEnum("backend").notNull(),
+    movable: boolean("movable").notNull().default(false),
+    serverId: text("server_id").references(() => servers.id, {
+      onDelete: "set null",
+    }),
+    sizeLimitMb: integer("size_limit_mb"),
+    nfsServer: text("nfs_server"),
+    nfsPath: text("nfs_path"),
+    createdAt: now(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("app_managed_volumes_app_name_idx").on(table.appId, table.name)]
+);
+
+export const resourceProviders = pgTable("resource_providers", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  type: resourceProviderTypeEnum("type").notNull(),
+  endpoint: text("endpoint").notNull(),
+  configJson: jsonb("config_json").$type<Record<string, unknown>>().notNull().default({}),
+  encryptedAdminSecretJson: text("encrypted_admin_secret_json").notNull(),
+  createdAt: now(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const appResourceBindings = pgTable(
+  "app_resource_bindings",
+  {
+    id: text("id").primaryKey(),
+    appId: text("app_id")
+      .notNull()
+      .references(() => apps.id, { onDelete: "cascade" }),
+    providerId: text("provider_id")
+      .notNull()
+      .references(() => resourceProviders.id, { onDelete: "restrict" }),
+    type: resourceProviderTypeEnum("type").notNull(),
+    logicalName: text("logical_name").notNull(),
+    configJson: jsonb("config_json").$type<Record<string, unknown>>().notNull().default({}),
+    encryptedGeneratedSecretJson: text("encrypted_generated_secret_json"),
+    autoCreate: boolean("auto_create").notNull().default(true),
+    status: resourceBindingStatusEnum("status").notNull().default("pending"),
+    createdAt: now(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("app_resource_bindings_app_logical_name_idx").on(
+      table.appId,
+      table.logicalName
+    ),
+  ]
+);
 
 export const appEnvVars = pgTable("app_env_vars", {
   id: text("id").primaryKey(),
@@ -132,6 +249,10 @@ export type Server = typeof servers.$inferSelect;
 export type NewServer = typeof servers.$inferInsert;
 export type App = typeof apps.$inferSelect;
 export type NewApp = typeof apps.$inferInsert;
+export type AppRuntimeConfig = typeof appRuntimeConfigs.$inferSelect;
+export type AppManagedVolume = typeof appManagedVolumes.$inferSelect;
+export type ResourceProvider = typeof resourceProviders.$inferSelect;
+export type AppResourceBinding = typeof appResourceBindings.$inferSelect;
 export type AppEnvVar = typeof appEnvVars.$inferSelect;
 export type Deployment = typeof deployments.$inferSelect;
 export type DeploymentLog = typeof deploymentLogs.$inferSelect;

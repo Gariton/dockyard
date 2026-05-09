@@ -30,7 +30,7 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-normal">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            Docker Compose apps, deploy jobs, and agent capacity in one place.
+            Dockyard-generated compose deploys, resource bindings, and agent capacity.
           </p>
         </div>
         <Link href="/apps/new" className={buttonVariants()}>

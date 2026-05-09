@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { appEnvVars } from "@/db/schema";
+import type { AppRuntimeConfig } from "@/db/schema";
 import { decryptValue, encryptValue } from "@/lib/crypto";
 import type { EnvInput } from "@/lib/validation";
 import { makeId } from "@/services/ids";
@@ -110,4 +111,19 @@ export async function buildPlainEnv(appId: string) {
   return Object.fromEntries(
     rows.map((row) => [row.key, decryptValue(row.encryptedValue)])
   ) as Record<string, string>;
+}
+
+export async function buildDeploymentEnv(
+  appId: string,
+  runtime: AppRuntimeConfig,
+  resourceEnv: Record<string, string>
+) {
+  const manualEnv = await buildPlainEnv(appId);
+
+  return {
+    NODE_ENV: "production",
+    PORT: String(runtime.containerPort),
+    ...manualEnv,
+    ...resourceEnv,
+  };
 }

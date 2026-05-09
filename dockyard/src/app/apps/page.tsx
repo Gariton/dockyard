@@ -26,7 +26,7 @@ export default async function AppsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-normal">Apps</h1>
           <p className="text-sm text-muted-foreground">
-            Registered Docker Compose apps and their last known deployment state.
+            Registered Dockerfile apps deployed with Dockyard-generated compose.
           </p>
         </div>
         <Link href="/apps/new" className={buttonVariants()}>
@@ -47,6 +47,7 @@ export default async function AppsPage() {
                 <TableHead>Git URL</TableHead>
                 <TableHead>Branch</TableHead>
                 <TableHead>Assigned server</TableHead>
+                <TableHead>Placement</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Commit</TableHead>
                 <TableHead>Updated</TableHead>
@@ -67,6 +68,9 @@ export default async function AppsPage() {
                   <TableCell>{app.branch}</TableCell>
                   <TableCell>{app.assignedServer ?? "auto"}</TableCell>
                   <TableCell>
+                    <StatusBadge status={app.placementStrategy} />
+                  </TableCell>
+                  <TableCell>
                     <StatusBadge status={app.latestDeploymentStatus} />
                   </TableCell>
                   <TableCell className="font-mono text-xs">
@@ -77,7 +81,7 @@ export default async function AppsPage() {
               ))}
               {apps.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-20 text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
                     No apps registered.
                   </TableCell>
                 </TableRow>

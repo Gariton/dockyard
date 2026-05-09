@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Boxes, History, LayoutDashboard, Server, type LucideIcon } from "lucide-react";
+import {
+  Boxes,
+  Database,
+  History,
+  LayoutDashboard,
+  Server,
+  type LucideIcon,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -15,6 +22,7 @@ type NavItem = {
 const items: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/apps", label: "Apps", icon: Boxes },
+  { href: "/resources", label: "Resources", icon: Database },
   { href: "/servers", label: "Servers", icon: Server },
   { href: "/deployments", label: "Deployments", icon: History },
 ];

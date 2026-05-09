@@ -1,8 +1,24 @@
 import { desc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { agentJobs, apps, deploymentLogs, deployments, servers } from "@/db/schema";
+import {
+  agentJobs,
+  apps,
+  deploymentLogs,
+  deployments,
+  servers,
+  type App,
+  type AppManagedVolume,
+} from "@/db/schema";
+import { generateComposeYaml } from "@/services/compose";
+import { buildDeploymentEnv } from "@/services/env-vars";
 import { makeId } from "@/services/ids";
+import {
+  getManagedVolumeRows,
+  toManagedVolumePayload,
+} from "@/services/managed-volumes";
+import { prepareResourceBindings } from "@/services/resources";
+import { getRuntimeConfig } from "@/services/runtime-configs";
 import { getServerById, selectServerByScore } from "@/services/servers";
 
 export async function queueDeployment(appId: string) {
@@ -12,10 +28,8 @@ export async function queueDeployment(appId: string) {
     throw new Error("App not found.");
   }
 
-  const server =
-    app.targetMode === "manual" && app.manualServerId
-      ? await getServerById(app.manualServerId)
-      : await selectServerByScore();
+  const volumes = await getManagedVolumeRows(app.id);
+  const server = await selectDeploymentServer(app, volumes);
 
   if (!server) {
     throw new Error("Target server not found.");
@@ -27,8 +41,21 @@ export async function queueDeployment(appId: string) {
 
   const deploymentId = makeId("dep");
   const jobId = makeId("job");
+  const runtime = await getRuntimeConfig(app.id);
+  const resourceEnv = await prepareResourceBindings(app.id);
+  const env = await buildDeploymentEnv(app.id, runtime, resourceEnv);
+  const generatedComposeYaml = generateComposeYaml(app, runtime, volumes);
+  const managedVolumes = toManagedVolumePayload(app.name, volumes);
+  const healthcheckUrl = `http://localhost:${app.publicPort}${runtime.healthcheckPath}`;
 
   return db.transaction(async (tx) => {
+    if (app.placementStrategy === "pinned" && !app.pinnedServerId) {
+      await tx
+        .update(apps)
+        .set({ pinnedServerId: server.id, updatedAt: new Date() })
+        .where(eq(apps.id, app.id));
+    }
+
     const [deployment] = await tx
       .insert(deployments)
       .values({
@@ -46,7 +73,17 @@ export async function queueDeployment(appId: string) {
       deploymentId,
       type: "deploy",
       status: "queued",
-      payloadJson: { appId: app.id },
+      payloadJson: {
+        jobId,
+        deploymentId,
+        appName: app.name,
+        gitUrl: app.gitUrl,
+        branch: app.branch,
+        generatedComposeYaml,
+        env,
+        managedVolumes,
+        healthcheckUrl,
+      },
     });
 
     await tx.insert(deploymentLogs).values({
@@ -58,6 +95,35 @@ export async function queueDeployment(appId: string) {
 
     return deployment;
   });
+}
+
+async function selectDeploymentServer(
+  app: App,
+  volumes: AppManagedVolume[]
+) {
+  const hasLocalVolume = volumes.some((volume) => volume.backend === "local");
+
+  if (hasLocalVolume && app.placementStrategy === "auto") {
+    throw new Error("Apps with local managed volumes must use manual or pinned placement.");
+  }
+
+  if (app.placementStrategy === "manual") {
+    if (!app.manualServerId) {
+      throw new Error("Manual placement requires a server.");
+    }
+    return getServerById(app.manualServerId);
+  }
+
+  if (app.placementStrategy === "pinned") {
+    if (app.pinnedServerId) {
+      return getServerById(app.pinnedServerId);
+    }
+    if (app.manualServerId) {
+      return getServerById(app.manualServerId);
+    }
+  }
+
+  return selectServerByScore();
 }
 
 export async function listDeployments() {

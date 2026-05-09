@@ -17,14 +17,22 @@ type jobEnvelope struct {
 }
 
 type deployJob struct {
-	JobID          string            `json:"jobId"`
-	DeploymentID   string            `json:"deploymentId"`
-	AppName        string            `json:"appName"`
-	GitURL         string            `json:"gitUrl"`
-	Branch         string            `json:"branch"`
-	ComposeFile    string            `json:"composeFile"`
-	Env            map[string]string `json:"env"`
-	HealthcheckURL string            `json:"healthcheckUrl"`
+	JobID                string            `json:"jobId"`
+	DeploymentID         string            `json:"deploymentId"`
+	AppName              string            `json:"appName"`
+	GitURL               string            `json:"gitUrl"`
+	Branch               string            `json:"branch"`
+	GeneratedComposeYAML string            `json:"generatedComposeYaml"`
+	Env                  map[string]string `json:"env"`
+	ManagedVolumes       []managedVolume   `json:"managedVolumes"`
+	HealthcheckURL       string            `json:"healthcheckUrl"`
+}
+
+type managedVolume struct {
+	Name      string `json:"name"`
+	Backend   string `json:"backend"`
+	HostPath  string `json:"hostPath,omitempty"`
+	MountPath string `json:"mountPath"`
 }
 
 type deploymentLogPayload struct {
