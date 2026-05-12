@@ -8,13 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { ResourceProvider } from "@/db/schema";
+import type { Dictionary } from "@/lib/i18n";
 
 const selectClass =
   "h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function ResourceProviderForm({
+  labels,
   provider,
 }: {
+  labels: Dictionary["forms"]["resourceProvider"];
   provider?: ResourceProvider;
 }) {
   const action = provider
@@ -25,15 +28,15 @@ export function ResourceProviderForm({
     <form action={action}>
       <Card>
         <CardHeader>
-          <CardTitle>{provider ? "Edit Provider" : "Register Provider"}</CardTitle>
+          <CardTitle>{provider ? labels.editTitle : labels.registerTitle}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">{labels.name}</Label>
             <Input id="name" name="name" defaultValue={provider?.name ?? ""} required />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="type">Type</Label>
+            <Label htmlFor="type">{labels.type}</Label>
             <select
               id="type"
               name="type"
@@ -41,13 +44,13 @@ export function ResourceProviderForm({
               defaultValue={provider?.type ?? "postgres"}
             >
               <option value="postgres">PostgreSQL</option>
-              <option value="s3">S3 / MinIO</option>
+              <option value="s3">{labels.s3Minio}</option>
               <option value="elasticsearch">Elasticsearch</option>
               <option value="redis">Redis</option>
             </select>
           </label>
           <label className="flex flex-col gap-2 md:col-span-2">
-            <Label htmlFor="endpoint">Endpoint</Label>
+            <Label htmlFor="endpoint">{labels.endpoint}</Label>
             <Input
               id="endpoint"
               name="endpoint"
@@ -57,7 +60,7 @@ export function ResourceProviderForm({
             />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="configJson">Config JSON</Label>
+            <Label htmlFor="configJson">{labels.configJson}</Label>
             <Textarea
               id="configJson"
               name="configJson"
@@ -67,7 +70,8 @@ export function ResourceProviderForm({
           </label>
           <label className="flex flex-col gap-2">
             <Label htmlFor="adminSecretJson">
-              Admin secret JSON{provider ? " (leave blank to keep current)" : ""}
+              {labels.adminSecretJson}
+              {provider ? labels.leaveBlank : ""}
             </Label>
             <Textarea
               id="adminSecretJson"
@@ -82,7 +86,9 @@ export function ResourceProviderForm({
             />
           </label>
           <div className="flex justify-end md:col-span-2">
-            <Button type="submit">{provider ? "Save provider" : "Create provider"}</Button>
+            <Button type="submit">
+              {provider ? labels.saveProvider : labels.createProvider}
+            </Button>
           </div>
         </CardContent>
       </Card>

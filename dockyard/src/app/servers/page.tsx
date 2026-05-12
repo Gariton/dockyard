@@ -9,37 +9,40 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDate, formatMb } from "@/lib/format";
+import { getI18n } from "@/lib/i18n-server";
 import { listServers } from "@/services/servers";
 
 export const dynamic = "force-dynamic";
 
 export default async function ServersPage() {
+  const { dictionary, locale } = await getI18n();
+  const labels = dictionary.servers;
   const servers = await listServers();
 
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold tracking-normal">Servers</h1>
+        <h1 className="text-2xl font-semibold tracking-normal">{labels.title}</h1>
         <p className="text-sm text-muted-foreground">
-          Agent heartbeats update capacity and availability for automatic placement.
+          {labels.description}
         </p>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Server Inventory</CardTitle>
+          <CardTitle>{labels.inventory}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Hostname</TableHead>
-                <TableHead>IP address</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>CPU</TableHead>
-                <TableHead>Memory</TableHead>
-                <TableHead>Disk</TableHead>
-                <TableHead>Apps</TableHead>
-                <TableHead>Last heartbeat</TableHead>
+                <TableHead>{labels.table.hostname}</TableHead>
+                <TableHead>{labels.table.ipAddress}</TableHead>
+                <TableHead>{labels.table.status}</TableHead>
+                <TableHead>{labels.table.cpu}</TableHead>
+                <TableHead>{labels.table.memory}</TableHead>
+                <TableHead>{labels.table.disk}</TableHead>
+                <TableHead>{labels.table.apps}</TableHead>
+                <TableHead>{labels.table.lastHeartbeat}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -48,7 +51,7 @@ export default async function ServersPage() {
                   <TableCell className="font-medium">{server.hostname}</TableCell>
                   <TableCell>{server.ipAddress}</TableCell>
                   <TableCell>
-                    <StatusBadge status={server.status} />
+                    <StatusBadge labels={dictionary.status} status={server.status} />
                   </TableCell>
                   <TableCell>{server.cpuUsagePercent.toFixed(1)}%</TableCell>
                   <TableCell>
@@ -58,13 +61,13 @@ export default async function ServersPage() {
                     {formatMb(server.diskUsedMb)} / {formatMb(server.diskTotalMb)}
                   </TableCell>
                   <TableCell>{server.runningAppCount}</TableCell>
-                  <TableCell>{formatDate(server.lastHeartbeatAt)}</TableCell>
+                  <TableCell>{formatDate(server.lastHeartbeatAt, locale)}</TableCell>
                 </TableRow>
               ))}
               {servers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-20 text-center text-muted-foreground">
-                    No agent heartbeat has been received.
+                    {labels.empty}
                   </TableCell>
                 </TableRow>
               ) : null}

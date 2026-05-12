@@ -1,30 +1,17 @@
 import { Badge } from "@/components/ui/badge";
+import { getDictionary, type Dictionary, defaultLocale } from "@/lib/i18n";
 
-const labels: Record<string, string> = {
-  queued: "Queued",
-  running: "Running",
-  success: "Success",
-  failed: "Failed",
-  online: "Online",
-  offline: "Offline",
-  auto: "Auto",
-  manual: "Manual",
-  pinned: "Pinned",
-  stateless: "Stateless",
-  stateful: "Stateful",
-  postgres: "PostgreSQL",
-  s3: "S3",
-  elasticsearch: "Elasticsearch",
-  redis: "Redis",
-  pending: "Pending",
-  ready: "Ready",
-  local: "Local",
-  nfs: "NFS",
-};
+type StatusLabelKey = keyof Dictionary["status"];
 
-export function StatusBadge({ status }: { status: string | null | undefined }) {
+export function StatusBadge({
+  labels = getDictionary(defaultLocale).status,
+  status,
+}: {
+  labels?: Dictionary["status"];
+  status: string | null | undefined;
+}) {
   if (!status) {
-    return <Badge variant="outline">None</Badge>;
+    return <Badge variant="outline">{labels.none}</Badge>;
   }
 
   const variant =
@@ -34,5 +21,7 @@ export function StatusBadge({ status }: { status: string | null | undefined }) {
         ? "default"
         : "secondary";
 
-  return <Badge variant={variant}>{labels[status] ?? status}</Badge>;
+  const label = status in labels ? labels[status as StatusLabelKey] : status;
+
+  return <Badge variant={variant}>{label}</Badge>;
 }

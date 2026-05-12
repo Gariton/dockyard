@@ -14,11 +14,14 @@ import {
 import { MetricCard } from "@/components/status/metric-card";
 import { StatusBadge } from "@/components/status/status-badge";
 import { formatDate, truncateSha } from "@/lib/format";
+import { getI18n } from "@/lib/i18n-server";
 import { getDashboardStats, listDeployments } from "@/services/deployments";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  const { dictionary, locale } = await getI18n();
+  const labels = dictionary.dashboard;
   const [stats, deployments] = await Promise.all([
     getDashboardStats(),
     listDeployments(),
@@ -28,45 +31,53 @@ export default async function DashboardPage() {
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-normal">Dashboard</h1>
+          <h1 className="text-2xl font-semibold tracking-normal">{labels.title}</h1>
           <p className="text-sm text-muted-foreground">
-            Dockyard-generated compose deploys, resource bindings, and agent capacity.
+            {labels.description}
           </p>
         </div>
         <Link href="/apps/new" className={buttonVariants()}>
           <Rocket data-icon="inline-start" />
-          New app
+          {labels.newApp}
         </Link>
       </div>
 
       <section className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="Apps" value={stats.appCount} detail="registered services" />
-        <MetricCard label="Servers" value={stats.serverCount} detail="known agents" />
         <MetricCard
-          label="Online"
-          value={stats.onlineServerCount}
-          detail="available targets"
+          label={labels.metrics.apps}
+          value={stats.appCount}
+          detail={labels.metrics.appsDetail}
         />
         <MetricCard
-          label="Recent deploys"
+          label={labels.metrics.servers}
+          value={stats.serverCount}
+          detail={labels.metrics.serversDetail}
+        />
+        <MetricCard
+          label={labels.metrics.online}
+          value={stats.onlineServerCount}
+          detail={labels.metrics.onlineDetail}
+        />
+        <MetricCard
+          label={labels.metrics.recentDeploys}
           value={deployments.length}
-          detail="visible history rows"
+          detail={labels.metrics.recentDeploysDetail}
         />
       </section>
 
       <Card>
         <CardHeader>
-          <CardTitle>Latest Deployments</CardTitle>
+          <CardTitle>{labels.latestDeployments}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>App</TableHead>
-                <TableHead>Server</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Commit</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>{labels.table.app}</TableHead>
+                <TableHead>{labels.table.server}</TableHead>
+                <TableHead>{labels.table.status}</TableHead>
+                <TableHead>{labels.table.commit}</TableHead>
+                <TableHead>{labels.table.created}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -79,18 +90,18 @@ export default async function DashboardPage() {
                   </TableCell>
                   <TableCell>{server.hostname}</TableCell>
                   <TableCell>
-                    <StatusBadge status={deployment.status} />
+                    <StatusBadge labels={dictionary.status} status={deployment.status} />
                   </TableCell>
                   <TableCell className="font-mono text-xs">
                     {truncateSha(deployment.commitSha)}
                   </TableCell>
-                  <TableCell>{formatDate(deployment.createdAt)}</TableCell>
+                  <TableCell>{formatDate(deployment.createdAt, locale)}</TableCell>
                 </TableRow>
               ))}
               {deployments.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="h-20 text-center text-muted-foreground">
-                    No deployments yet.
+                    {labels.empty}
                   </TableCell>
                 </TableRow>
               ) : null}

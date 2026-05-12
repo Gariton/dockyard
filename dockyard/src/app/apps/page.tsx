@@ -13,44 +13,47 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status/status-badge";
 import { formatDate, truncateSha } from "@/lib/format";
+import { getI18n } from "@/lib/i18n-server";
 import { listApps } from "@/services/apps";
 
 export const dynamic = "force-dynamic";
 
 export default async function AppsPage() {
+  const { dictionary, locale } = await getI18n();
+  const labels = dictionary.apps;
   const apps = await listApps();
 
   return (
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-normal">Apps</h1>
+          <h1 className="text-2xl font-semibold tracking-normal">{labels.title}</h1>
           <p className="text-sm text-muted-foreground">
-            Registered Dockerfile apps deployed with Dockyard-generated compose.
+            {labels.description}
           </p>
         </div>
         <Link href="/apps/new" className={buttonVariants()}>
           <Plus data-icon="inline-start" />
-          Register app
+          {labels.registerApp}
         </Link>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Application Inventory</CardTitle>
+          <CardTitle>{labels.inventory}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>App name</TableHead>
-                <TableHead>Domain</TableHead>
-                <TableHead>Git URL</TableHead>
-                <TableHead>Branch</TableHead>
-                <TableHead>Assigned server</TableHead>
-                <TableHead>Placement</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Commit</TableHead>
-                <TableHead>Updated</TableHead>
+                <TableHead>{labels.table.appName}</TableHead>
+                <TableHead>{labels.table.domain}</TableHead>
+                <TableHead>{labels.table.gitUrl}</TableHead>
+                <TableHead>{labels.table.branch}</TableHead>
+                <TableHead>{labels.table.assignedServer}</TableHead>
+                <TableHead>{labels.table.placement}</TableHead>
+                <TableHead>{labels.table.status}</TableHead>
+                <TableHead>{labels.table.commit}</TableHead>
+                <TableHead>{labels.table.updated}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -66,23 +69,23 @@ export default async function AppsPage() {
                     {app.gitUrl}
                   </TableCell>
                   <TableCell>{app.branch}</TableCell>
-                  <TableCell>{app.assignedServer ?? "auto"}</TableCell>
+                  <TableCell>{app.assignedServer ?? dictionary.common.auto}</TableCell>
                   <TableCell>
-                    <StatusBadge status={app.placementStrategy} />
+                    <StatusBadge labels={dictionary.status} status={app.placementStrategy} />
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={app.latestDeploymentStatus} />
+                    <StatusBadge labels={dictionary.status} status={app.latestDeploymentStatus} />
                   </TableCell>
                   <TableCell className="font-mono text-xs">
                     {truncateSha(app.latestDeployedCommit)}
                   </TableCell>
-                  <TableCell>{formatDate(app.updatedAt)}</TableCell>
+                  <TableCell>{formatDate(app.updatedAt, locale)}</TableCell>
                 </TableRow>
               ))}
               {apps.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
-                    No apps registered.
+                    {labels.empty}
                   </TableCell>
                 </TableRow>
               ) : null}

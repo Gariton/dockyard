@@ -11,37 +11,40 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDate, truncateSha } from "@/lib/format";
+import { getI18n } from "@/lib/i18n-server";
 import { listDeployments } from "@/services/deployments";
 
 export const dynamic = "force-dynamic";
 
 export default async function DeploymentsPage() {
+  const { dictionary, locale } = await getI18n();
+  const labels = dictionary.deployments;
   const rows = await listDeployments();
 
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold tracking-normal">Deployments</h1>
+        <h1 className="text-2xl font-semibold tracking-normal">{labels.title}</h1>
         <p className="text-sm text-muted-foreground">
-          Queue, running, success, and failed deployment records from agents.
+          {labels.description}
         </p>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Deployment History</CardTitle>
+          <CardTitle>{labels.history}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>App</TableHead>
-                <TableHead>Server</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Ref</TableHead>
-                <TableHead>Commit</TableHead>
-                <TableHead>Started</TableHead>
-                <TableHead>Finished</TableHead>
-                <TableHead>Error</TableHead>
+                <TableHead>{labels.table.app}</TableHead>
+                <TableHead>{labels.table.server}</TableHead>
+                <TableHead>{labels.table.status}</TableHead>
+                <TableHead>{labels.table.ref}</TableHead>
+                <TableHead>{labels.table.commit}</TableHead>
+                <TableHead>{labels.table.started}</TableHead>
+                <TableHead>{labels.table.finished}</TableHead>
+                <TableHead>{labels.table.error}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -54,14 +57,14 @@ export default async function DeploymentsPage() {
                   </TableCell>
                   <TableCell>{server.hostname}</TableCell>
                   <TableCell>
-                    <StatusBadge status={deployment.status} />
+                    <StatusBadge labels={dictionary.status} status={deployment.status} />
                   </TableCell>
                   <TableCell>{deployment.gitRef ?? "-"}</TableCell>
                   <TableCell className="font-mono text-xs">
                     {truncateSha(deployment.commitSha)}
                   </TableCell>
-                  <TableCell>{formatDate(deployment.startedAt)}</TableCell>
-                  <TableCell>{formatDate(deployment.finishedAt)}</TableCell>
+                  <TableCell>{formatDate(deployment.startedAt, locale)}</TableCell>
+                  <TableCell>{formatDate(deployment.finishedAt, locale)}</TableCell>
                   <TableCell className="max-w-80 truncate text-muted-foreground">
                     {deployment.errorMessage ?? "-"}
                   </TableCell>
@@ -70,7 +73,7 @@ export default async function DeploymentsPage() {
               {rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-20 text-center text-muted-foreground">
-                    No deployments yet.
+                    {labels.empty}
                   </TableCell>
                 </TableRow>
               ) : null}

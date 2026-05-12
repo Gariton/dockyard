@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { getI18n } from "@/lib/i18n-server";
 
 import "./globals.css";
 
@@ -20,18 +21,22 @@ export const metadata: Metadata = {
   description: "Lightweight internal deployment control plane",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { dictionary, locale } = await getI18n();
+
   return (
     <html
-      lang="ja"
+      lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
-        <AppShell>{children}</AppShell>
+        <AppShell dictionary={dictionary} locale={locale}>
+          {children}
+        </AppShell>
       </body>
     </html>
   );

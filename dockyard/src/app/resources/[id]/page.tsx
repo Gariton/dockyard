@@ -9,6 +9,7 @@ import { ResourceProviderForm } from "@/components/forms/resource-provider-form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getI18n } from "@/lib/i18n-server";
 import { getResourceProvider } from "@/services/resources";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,8 @@ export default async function ResourceProviderDetailPage({
 }: PageProps) {
   const { id } = await params;
   const { test } = await searchParams;
+  const { dictionary } = await getI18n();
+  const labels = dictionary.resourceProviderDetail;
   const provider = await getResourceProvider(id);
 
   if (!provider) {
@@ -41,13 +44,13 @@ export default async function ResourceProviderDetailPage({
           <form action={testResourceProviderAction.bind(null, provider.id)}>
             <Button type="submit" variant="outline">
               <Wifi data-icon="inline-start" />
-              Test
+              {labels.test}
             </Button>
           </form>
           <form action={deleteResourceProviderAction.bind(null, provider.id)}>
             <Button type="submit" variant="destructive">
               <Trash2 data-icon="inline-start" />
-              Delete
+              {labels.delete}
             </Button>
           </form>
         </div>
@@ -55,22 +58,25 @@ export default async function ResourceProviderDetailPage({
 
       {test === "ok" ? (
         <Alert>
-          <AlertTitle>Connection test succeeded</AlertTitle>
+          <AlertTitle>{labels.connectionTestSucceeded}</AlertTitle>
           <AlertDescription>
-            PostgreSQL providers run a live query; other provider types are metadata-only in the MVP.
+            {labels.connectionTestDescription}
           </AlertDescription>
         </Alert>
       ) : null}
 
       <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <ResourceProviderForm provider={provider} />
+        <ResourceProviderForm
+          labels={dictionary.forms.resourceProvider}
+          provider={provider}
+        />
         <Card>
           <CardHeader>
-            <CardTitle>Secret Storage</CardTitle>
+            <CardTitle>{labels.secretStorage}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
-            <p>Admin credentials are encrypted with DOCKYARD_ENCRYPTION_KEY.</p>
-            <p>Leave the secret field blank when editing to preserve the current value.</p>
+            <p>{labels.encryptedCredentials}</p>
+            <p>{labels.preserveSecret}</p>
           </CardContent>
         </Card>
       </section>

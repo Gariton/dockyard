@@ -4,30 +4,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AppRuntimeConfig } from "@/db/schema";
+import type { Dictionary } from "@/lib/i18n";
 
 const selectClass =
   "h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function RuntimeConfigForm({
   appId,
+  labels,
   runtime,
 }: {
   appId: string;
+  labels: Dictionary["forms"]["runtimeConfig"];
   runtime: AppRuntimeConfig;
 }) {
   return (
     <form action={updateRuntimeConfigAction.bind(null, appId)}>
       <Card>
         <CardHeader>
-          <CardTitle>Runtime Configuration</CardTitle>
+          <CardTitle>{labels.title}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-2">
-            <Label htmlFor="buildContext">Build context</Label>
+            <Label htmlFor="buildContext">{labels.buildContext}</Label>
             <Input id="buildContext" name="buildContext" defaultValue={runtime.buildContext} required />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="dockerfilePath">Dockerfile path</Label>
+            <Label htmlFor="dockerfilePath">{labels.dockerfilePath}</Label>
             <Input
               id="dockerfilePath"
               name="dockerfilePath"
@@ -36,15 +39,15 @@ export function RuntimeConfigForm({
             />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="command">Command</Label>
+            <Label htmlFor="command">{labels.command}</Label>
             <Input id="command" name="command" defaultValue={runtime.command ?? ""} />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="workingDir">Working directory</Label>
+            <Label htmlFor="workingDir">{labels.workingDirectory}</Label>
             <Input id="workingDir" name="workingDir" defaultValue={runtime.workingDir ?? ""} />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="containerPort">Container port</Label>
+            <Label htmlFor="containerPort">{labels.containerPort}</Label>
             <Input
               id="containerPort"
               name="containerPort"
@@ -56,7 +59,7 @@ export function RuntimeConfigForm({
             />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="healthcheckPath">Healthcheck path</Label>
+            <Label htmlFor="healthcheckPath">{labels.healthcheckPath}</Label>
             <Input
               id="healthcheckPath"
               name="healthcheckPath"
@@ -65,7 +68,9 @@ export function RuntimeConfigForm({
             />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="healthcheckIntervalSeconds">Healthcheck interval seconds</Label>
+            <Label htmlFor="healthcheckIntervalSeconds">
+              {labels.healthcheckIntervalSeconds}
+            </Label>
             <Input
               id="healthcheckIntervalSeconds"
               name="healthcheckIntervalSeconds"
@@ -76,7 +81,9 @@ export function RuntimeConfigForm({
             />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="healthcheckTimeoutSeconds">Healthcheck timeout seconds</Label>
+            <Label htmlFor="healthcheckTimeoutSeconds">
+              {labels.healthcheckTimeoutSeconds}
+            </Label>
             <Input
               id="healthcheckTimeoutSeconds"
               name="healthcheckTimeoutSeconds"
@@ -87,11 +94,11 @@ export function RuntimeConfigForm({
             />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="cpuLimit">CPU limit</Label>
+            <Label htmlFor="cpuLimit">{labels.cpuLimit}</Label>
             <Input id="cpuLimit" name="cpuLimit" placeholder="0.5" defaultValue={runtime.cpuLimit ?? ""} />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="memoryLimitMb">Memory limit MB</Label>
+            <Label htmlFor="memoryLimitMb">{labels.memoryLimitMb}</Label>
             <Input
               id="memoryLimitMb"
               name="memoryLimitMb"
@@ -101,7 +108,7 @@ export function RuntimeConfigForm({
             />
           </label>
           <label className="flex flex-col gap-2">
-            <Label htmlFor="restartPolicy">Restart policy</Label>
+            <Label htmlFor="restartPolicy">{labels.restartPolicy}</Label>
             <select
               id="restartPolicy"
               name="restartPolicy"
@@ -115,7 +122,7 @@ export function RuntimeConfigForm({
             </select>
           </label>
           <div className="flex justify-end md:col-span-2">
-            <Button type="submit">Save runtime</Button>
+            <Button type="submit">{labels.saveRuntime}</Button>
           </div>
         </CardContent>
       </Card>

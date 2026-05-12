@@ -12,22 +12,23 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import type { Dictionary } from "@/lib/i18n";
 
 type NavItem = {
   href: string;
-  label: string;
+  labelKey: keyof Dictionary["nav"];
   icon: LucideIcon;
 };
 
 const items: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/apps", label: "Apps", icon: Boxes },
-  { href: "/resources", label: "Resources", icon: Database },
-  { href: "/servers", label: "Servers", icon: Server },
-  { href: "/deployments", label: "Deployments", icon: History },
+  { href: "/", labelKey: "dashboard", icon: LayoutDashboard },
+  { href: "/apps", labelKey: "apps", icon: Boxes },
+  { href: "/resources", labelKey: "resources", icon: Database },
+  { href: "/servers", labelKey: "servers", icon: Server },
+  { href: "/deployments", labelKey: "deployments", icon: History },
 ];
 
-export function NavLinks() {
+export function NavLinks({ labels }: { labels: Dictionary["nav"] }) {
   const pathname = usePathname();
 
   return (
@@ -47,7 +48,7 @@ export function NavLinks() {
             )}
           >
             <Icon data-icon="inline-start" />
-            {item.label}
+            {labels[item.labelKey]}
           </Link>
         );
       })}

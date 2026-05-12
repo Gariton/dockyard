@@ -35,6 +35,7 @@ import {
   listAppResourceBindings,
   listResourceProviders,
 } from "@/services/resources";
+import { getI18n } from "@/lib/i18n-server";
 import { getRuntimeConfig } from "@/services/runtime-configs";
 import { listServers } from "@/services/servers";
 
@@ -44,6 +45,8 @@ type PageProps = { params: Promise<{ id: string }> };
 
 export default async function AppDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const { dictionary, locale } = await getI18n();
+  const labels = dictionary.appDetail;
   const appRecord = await getApp(id);
 
   if (!appRecord) {
@@ -87,55 +90,61 @@ export default async function AppDetailPage({ params }: PageProps) {
         <form action={deployAppAction.bind(null, app.id)}>
           <Button type="submit">
             <Rocket data-icon="inline-start" />
-            Deploy
+            {labels.deploy}
           </Button>
         </form>
       </div>
 
       <Tabs defaultValue="overview">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="runtime">Runtime</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
-          <TabsTrigger value="volumes">Volumes</TabsTrigger>
-          <TabsTrigger value="env">Env</TabsTrigger>
-          <TabsTrigger value="deployments">Deployments</TabsTrigger>
+          <TabsTrigger value="overview">{labels.tabs.overview}</TabsTrigger>
+          <TabsTrigger value="runtime">{labels.tabs.runtime}</TabsTrigger>
+          <TabsTrigger value="resources">{labels.tabs.resources}</TabsTrigger>
+          <TabsTrigger value="volumes">{labels.tabs.volumes}</TabsTrigger>
+          <TabsTrigger value="env">{labels.tabs.env}</TabsTrigger>
+          <TabsTrigger value="deployments">{labels.tabs.deployments}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="flex flex-col gap-4">
           <section className="grid gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle>App Details</CardTitle>
+                <CardTitle>{labels.details.title}</CardTitle>
               </CardHeader>
               <CardContent>
                 <dl className="grid gap-3 text-sm md:grid-cols-2">
                   <div>
-                    <dt className="text-muted-foreground">Git URL</dt>
+                    <dt className="text-muted-foreground">{labels.details.gitUrl}</dt>
                     <dd className="break-all font-mono text-xs">{app.gitUrl}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Branch</dt>
+                    <dt className="text-muted-foreground">{labels.details.branch}</dt>
                     <dd>{app.branch}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Deprecated compose file</dt>
-                    <dd>{app.composeFilePath} (not used for production deploys)</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">Assigned host port</dt>
-                    <dd>{app.publicPort}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">State mode</dt>
+                    <dt className="text-muted-foreground">
+                      {labels.details.deprecatedComposeFile}
+                    </dt>
                     <dd>
-                      <StatusBadge status={app.stateMode} />
+                      {app.composeFilePath} ({labels.details.notUsedForProduction})
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Placement</dt>
+                    <dt className="text-muted-foreground">
+                      {labels.details.assignedHostPort}
+                    </dt>
+                    <dd>{app.publicPort}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">{labels.details.stateMode}</dt>
                     <dd>
-                      <StatusBadge status={app.placementStrategy} />
+                      <StatusBadge labels={dictionary.status} status={app.stateMode} />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">{labels.details.placement}</dt>
+                    <dd>
+                      <StatusBadge labels={dictionary.status} status={app.placementStrategy} />
                     </dd>
                   </div>
                 </dl>
@@ -143,53 +152,64 @@ export default async function AppDetailPage({ params }: PageProps) {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Assigned Server</CardTitle>
+                <CardTitle>{labels.details.assignedServer}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-2 text-sm">
-                <div className="text-lg font-semibold">{server?.hostname ?? "Auto selected"}</div>
-                <div className="text-muted-foreground">
-                  {server?.ipAddress ?? "Resolved at deploy time"}
+                <div className="text-lg font-semibold">
+                  {server?.hostname ?? labels.details.autoSelected}
                 </div>
-                {server ? <StatusBadge status={server.status} /> : null}
+                <div className="text-muted-foreground">
+                  {server?.ipAddress ?? labels.details.resolvedAtDeployTime}
+                </div>
+                {server ? (
+                  <StatusBadge labels={dictionary.status} status={server.status} />
+                ) : null}
               </CardContent>
             </Card>
           </section>
           <Alert>
-            <AlertTitle>Generated compose is authoritative</AlertTitle>
+            <AlertTitle>{labels.alerts.composeTitle}</AlertTitle>
             <AlertDescription>
-              Dockyard now deploys Dockerfile-based apps from runtime config and ignores repository
-              compose files in production.
+              {labels.alerts.composeDescription}
             </AlertDescription>
           </Alert>
         </TabsContent>
 
         <TabsContent value="runtime">
-          <RuntimeConfigForm appId={app.id} runtime={runtime} />
+          <RuntimeConfigForm
+            appId={app.id}
+            labels={dictionary.forms.runtimeConfig}
+            runtime={runtime}
+          />
         </TabsContent>
 
         <TabsContent value="resources" className="flex flex-col gap-4">
           {envCollisions.length > 0 ? (
             <Alert>
-              <AlertTitle>Generated env overrides manual env</AlertTitle>
+              <AlertTitle>{labels.alerts.envOverrideTitle}</AlertTitle>
               <AlertDescription>
-                Resource bindings currently override manual keys: {envCollisions.join(", ")}.
+                {labels.alerts.envOverrideDescription} {envCollisions.join(", ")}.
               </AlertDescription>
             </Alert>
           ) : null}
-          <ResourceBindingForm appId={app.id} providers={providers} />
+          <ResourceBindingForm
+            appId={app.id}
+            labels={dictionary.forms.resourceBinding}
+            providers={providers}
+          />
           <Card>
             <CardHeader>
-              <CardTitle>Resource Bindings</CardTitle>
+              <CardTitle>{labels.resourceBindings.title}</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Logical name</TableHead>
-                    <TableHead>Provider</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Generated env</TableHead>
+                    <TableHead>{labels.resourceBindings.logicalName}</TableHead>
+                    <TableHead>{labels.resourceBindings.provider}</TableHead>
+                    <TableHead>{labels.resourceBindings.type}</TableHead>
+                    <TableHead>{labels.resourceBindings.status}</TableHead>
+                    <TableHead>{labels.resourceBindings.generatedEnv}</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
@@ -199,10 +219,10 @@ export default async function AppDetailPage({ params }: PageProps) {
                       <TableCell className="font-medium">{binding.logicalName}</TableCell>
                       <TableCell>{binding.providerName}</TableCell>
                       <TableCell>
-                        <StatusBadge status={binding.type} />
+                        <StatusBadge labels={dictionary.status} status={binding.type} />
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={binding.status} />
+                        <StatusBadge labels={dictionary.status} status={binding.status} />
                       </TableCell>
                       <TableCell className="max-w-96">
                         <div className="flex flex-wrap gap-1">
@@ -219,7 +239,7 @@ export default async function AppDetailPage({ params }: PageProps) {
                             type="submit"
                             variant="ghost"
                             size="icon-sm"
-                            aria-label="Delete binding"
+                            aria-label={labels.resourceBindings.deleteLabel}
                           >
                             <Trash2 />
                           </Button>
@@ -230,7 +250,7 @@ export default async function AppDetailPage({ params }: PageProps) {
                   {bindings.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="h-20 text-center text-muted-foreground">
-                        No resource bindings yet.
+                        {labels.resourceBindings.empty}
                       </TableCell>
                     </TableRow>
                   ) : null}
@@ -243,27 +263,31 @@ export default async function AppDetailPage({ params }: PageProps) {
         <TabsContent value="volumes" className="flex flex-col gap-4">
           {hasLocalVolume && app.placementStrategy === "auto" ? (
             <Alert variant="destructive">
-              <AlertTitle>Local volume placement risk</AlertTitle>
+              <AlertTitle>{labels.alerts.localVolumeTitle}</AlertTitle>
               <AlertDescription>
-                Apps with local managed volumes must use manual or pinned placement before deploy.
+                {labels.alerts.localVolumeDescription}
               </AlertDescription>
             </Alert>
           ) : null}
-          <ManagedVolumeForm appId={app.id} servers={servers} />
+          <ManagedVolumeForm
+            appId={app.id}
+            labels={dictionary.forms.managedVolume}
+            servers={servers}
+          />
           <Card>
             <CardHeader>
-              <CardTitle>Managed Volumes</CardTitle>
+              <CardTitle>{labels.volumes.title}</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Mount path</TableHead>
-                    <TableHead>Backend</TableHead>
-                    <TableHead>Movable</TableHead>
-                    <TableHead>Server</TableHead>
-                    <TableHead>NFS</TableHead>
+                    <TableHead>{labels.volumes.name}</TableHead>
+                    <TableHead>{labels.volumes.mountPath}</TableHead>
+                    <TableHead>{labels.volumes.backend}</TableHead>
+                    <TableHead>{labels.volumes.movable}</TableHead>
+                    <TableHead>{labels.volumes.server}</TableHead>
+                    <TableHead>{labels.volumes.nfs}</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
@@ -273,9 +297,11 @@ export default async function AppDetailPage({ params }: PageProps) {
                       <TableCell className="font-medium">{volume.name}</TableCell>
                       <TableCell className="font-mono text-xs">{volume.mountPath}</TableCell>
                       <TableCell>
-                        <StatusBadge status={volume.backend} />
+                        <StatusBadge labels={dictionary.status} status={volume.backend} />
                       </TableCell>
-                      <TableCell>{volume.movable ? "yes" : "no"}</TableCell>
+                      <TableCell>
+                        {volume.movable ? dictionary.common.yes : dictionary.common.no}
+                      </TableCell>
                       <TableCell>{volumeServer?.hostname ?? "-"}</TableCell>
                       <TableCell className="max-w-72 truncate font-mono text-xs">
                         {volume.backend === "nfs"
@@ -288,7 +314,7 @@ export default async function AppDetailPage({ params }: PageProps) {
                             type="submit"
                             variant="ghost"
                             size="icon-sm"
-                            aria-label="Delete volume"
+                            aria-label={labels.volumes.deleteLabel}
                           >
                             <Trash2 />
                           </Button>
@@ -299,7 +325,7 @@ export default async function AppDetailPage({ params }: PageProps) {
                   {volumes.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="h-20 text-center text-muted-foreground">
-                        No managed volumes yet.
+                        {labels.volumes.empty}
                       </TableCell>
                     </TableRow>
                   ) : null}
@@ -310,20 +336,20 @@ export default async function AppDetailPage({ params }: PageProps) {
         </TabsContent>
 
         <TabsContent value="env" className="flex flex-col gap-4">
-          <EnvForm appId={app.id} />
+          <EnvForm appId={app.id} labels={dictionary.forms.env} />
           <Card>
             <CardHeader>
-              <CardTitle>Manual Environment Variables</CardTitle>
+              <CardTitle>{labels.env.title}</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Key</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Secret</TableHead>
-                    <TableHead>Required</TableHead>
-                    <TableHead>Updated</TableHead>
+                    <TableHead>{labels.env.key}</TableHead>
+                    <TableHead>{labels.env.value}</TableHead>
+                    <TableHead>{labels.env.secret}</TableHead>
+                    <TableHead>{labels.env.required}</TableHead>
+                    <TableHead>{labels.env.updated}</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
@@ -334,16 +360,20 @@ export default async function AppDetailPage({ params }: PageProps) {
                       <TableCell className="max-w-96 truncate font-mono text-xs">
                         {env.value}
                       </TableCell>
-                      <TableCell>{env.isSecret ? "yes" : "no"}</TableCell>
-                      <TableCell>{env.required ? "yes" : "no"}</TableCell>
-                      <TableCell>{formatDate(env.updatedAt)}</TableCell>
+                      <TableCell>
+                        {env.isSecret ? dictionary.common.yes : dictionary.common.no}
+                      </TableCell>
+                      <TableCell>
+                        {env.required ? dictionary.common.yes : dictionary.common.no}
+                      </TableCell>
+                      <TableCell>{formatDate(env.updatedAt, locale)}</TableCell>
                       <TableCell className="text-right">
                         <form action={deleteEnvVarAction.bind(null, app.id, env.id)}>
                           <Button
                             type="submit"
                             variant="ghost"
                             size="icon-sm"
-                            aria-label="Delete env"
+                            aria-label={labels.env.deleteLabel}
                           >
                             <Trash2 />
                           </Button>
@@ -354,7 +384,7 @@ export default async function AppDetailPage({ params }: PageProps) {
                   {envVars.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="h-20 text-center text-muted-foreground">
-                        No manual environment variables yet.
+                        {labels.env.empty}
                       </TableCell>
                     </TableRow>
                   ) : null}
@@ -367,34 +397,34 @@ export default async function AppDetailPage({ params }: PageProps) {
         <TabsContent value="deployments">
           <Card>
             <CardHeader>
-              <CardTitle>Deployment History</CardTitle>
+              <CardTitle>{labels.deployments.title}</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Server</TableHead>
-                    <TableHead>Git ref</TableHead>
-                    <TableHead>Commit</TableHead>
-                    <TableHead>Started</TableHead>
-                    <TableHead>Finished</TableHead>
-                    <TableHead>Error</TableHead>
+                    <TableHead>{labels.deployments.status}</TableHead>
+                    <TableHead>{labels.deployments.server}</TableHead>
+                    <TableHead>{labels.deployments.gitRef}</TableHead>
+                    <TableHead>{labels.deployments.commit}</TableHead>
+                    <TableHead>{labels.deployments.started}</TableHead>
+                    <TableHead>{labels.deployments.finished}</TableHead>
+                    <TableHead>{labels.deployments.error}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {deployments.map(({ deployment, server: deployedServer }) => (
                     <TableRow key={deployment.id}>
                       <TableCell>
-                        <StatusBadge status={deployment.status} />
+                        <StatusBadge labels={dictionary.status} status={deployment.status} />
                       </TableCell>
                       <TableCell>{deployedServer.hostname}</TableCell>
                       <TableCell>{deployment.gitRef ?? "-"}</TableCell>
                       <TableCell className="font-mono text-xs">
                         {truncateSha(deployment.commitSha)}
                       </TableCell>
-                      <TableCell>{formatDate(deployment.startedAt)}</TableCell>
-                      <TableCell>{formatDate(deployment.finishedAt)}</TableCell>
+                      <TableCell>{formatDate(deployment.startedAt, locale)}</TableCell>
+                      <TableCell>{formatDate(deployment.finishedAt, locale)}</TableCell>
                       <TableCell className="max-w-72 truncate text-muted-foreground">
                         {deployment.errorMessage ?? "-"}
                       </TableCell>
@@ -403,7 +433,7 @@ export default async function AppDetailPage({ params }: PageProps) {
                   {deployments.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="h-20 text-center text-muted-foreground">
-                        No deployments yet.
+                        {labels.deployments.empty}
                       </TableCell>
                     </TableRow>
                   ) : null}

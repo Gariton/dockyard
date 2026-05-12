@@ -1,20 +1,23 @@
 import { AppForm } from "@/components/forms/app-form";
+import { getI18n } from "@/lib/i18n-server";
 import { listServers } from "@/services/servers";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewAppPage() {
+  const { dictionary } = await getI18n();
+  const labels = dictionary.newApp;
   const servers = await listServers();
 
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold tracking-normal">Register App</h1>
+        <h1 className="text-2xl font-semibold tracking-normal">{labels.title}</h1>
         <p className="text-sm text-muted-foreground">
-          Add a Compose-ready repository and choose how Dockyard should assign a target.
+          {labels.description}
         </p>
       </div>
-      <AppForm servers={servers} />
+      <AppForm labels={dictionary.forms.app} servers={servers} />
     </>
   );
 }

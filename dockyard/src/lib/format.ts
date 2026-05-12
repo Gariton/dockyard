@@ -1,9 +1,19 @@
-export function formatDate(value: Date | string | null | undefined) {
+import { defaultLocale, type Locale } from "@/lib/i18n";
+
+const dateLocales = {
+  en: "en-US",
+  ja: "ja-JP",
+} satisfies Record<Locale, string>;
+
+export function formatDate(
+  value: Date | string | null | undefined,
+  locale: Locale = defaultLocale
+) {
   if (!value) {
     return "-";
   }
 
-  return new Intl.DateTimeFormat("ja-JP", {
+  return new Intl.DateTimeFormat(dateLocales[locale], {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
