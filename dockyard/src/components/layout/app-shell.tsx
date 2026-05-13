@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Anchor } from "lucide-react";
 
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { NavLinks } from "@/components/layout/nav-links";
 import type { Dictionary, Locale } from "@/lib/i18n";
 
@@ -37,7 +38,7 @@ export function AppShell({
             <Anchor />
             Dockyard
           </Link>
-          <LanguageSwitcher labels={dictionary.language} locale={locale} />
+          <MobileNav dictionary={dictionary} locale={locale} />
         </header>
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
           {children}

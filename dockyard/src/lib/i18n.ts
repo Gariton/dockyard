@@ -7,6 +7,8 @@ export const localeCookieName = "dockyard-locale";
 
 const en = {
   shell: {
+    closeMenu: "Close menu",
+    openMenu: "Open menu",
     tagline: "deploy control plane",
   },
   language: {
@@ -104,6 +106,7 @@ const en = {
     history: "Deployment History",
     table: {
       app: "App",
+      url: "URL",
       server: "Server",
       status: "Status",
       ref: "Ref",
@@ -112,6 +115,7 @@ const en = {
       finished: "Finished",
       error: "Error",
     },
+    openUrl: "Open deployed app",
     empty: "No deployments yet.",
   },
   servers: {
@@ -229,6 +233,7 @@ const en = {
     },
     deployments: {
       title: "Deployment History",
+      url: "URL",
       status: "Status",
       server: "Server",
       gitRef: "Git ref",
@@ -236,6 +241,7 @@ const en = {
       started: "Started",
       finished: "Finished",
       error: "Error",
+      openUrl: "Open deployed app",
       empty: "No deployments yet.",
     },
   },
@@ -329,6 +335,8 @@ export type Dictionary = typeof en;
 
 const ja: Dictionary = {
   shell: {
+    closeMenu: "メニューを閉じる",
+    openMenu: "メニューを開く",
     tagline: "デプロイ管理プレーン",
   },
   language: {
@@ -426,6 +434,7 @@ const ja: Dictionary = {
     history: "デプロイ履歴",
     table: {
       app: "アプリ",
+      url: "URL",
       server: "サーバー",
       status: "ステータス",
       ref: "Ref",
@@ -434,6 +443,7 @@ const ja: Dictionary = {
       finished: "完了日時",
       error: "エラー",
     },
+    openUrl: "デプロイ先を開く",
     empty: "デプロイはまだありません。",
   },
   servers: {
@@ -551,6 +561,7 @@ const ja: Dictionary = {
     },
     deployments: {
       title: "デプロイ履歴",
+      url: "URL",
       status: "ステータス",
       server: "サーバー",
       gitRef: "Git ref",
@@ -558,6 +569,7 @@ const ja: Dictionary = {
       started: "開始日時",
       finished: "完了日時",
       error: "エラー",
+      openUrl: "デプロイ先を開く",
       empty: "デプロイはまだありません。",
     },
   },

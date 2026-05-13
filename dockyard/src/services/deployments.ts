@@ -11,6 +11,7 @@ import {
   type AppManagedVolume,
 } from "@/db/schema";
 import { generateComposeYaml } from "@/services/compose";
+import { configureDeploymentDns } from "@/services/dns";
 import { buildDeploymentEnv } from "@/services/env-vars";
 import { makeId } from "@/services/ids";
 import {
@@ -47,6 +48,10 @@ export async function queueDeployment(appId: string) {
   const generatedComposeYaml = generateComposeYaml(app, runtime, volumes);
   const managedVolumes = toManagedVolumePayload(app.name, volumes);
   const healthcheckUrl = `http://localhost:${app.publicPort}${runtime.healthcheckPath}`;
+  const dnsResult = await configureDeploymentDns({
+    domain: app.domain,
+    targetIp: server.ipAddress,
+  });
 
   return db.transaction(async (tx) => {
     if (app.placementStrategy === "pinned" && !app.pinnedServerId) {
@@ -92,6 +97,15 @@ export async function queueDeployment(appId: string) {
       level: "info",
       message: `Deployment queued for ${server.hostname}.`,
     });
+
+    if (dnsResult.configured) {
+      await tx.insert(deploymentLogs).values({
+        id: makeId("log"),
+        deploymentId,
+        level: "info",
+        message: `PowerDNS ${dnsResult.recordType} record ${dnsResult.recordName} -> ${dnsResult.target} updated.`,
+      });
+    }
 
     return deployment;
   });

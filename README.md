@@ -85,6 +85,16 @@ Required environment variables:
 DATABASE_URL=postgres://dockyard:dockyard@localhost:5432/dockyard
 DOCKYARD_ENCRYPTION_KEY=replace-with-a-long-random-string
 AGENT_SHARED_TOKEN=replace-with-agent-token
+DOCKYARD_APP_SCHEME=http
+TRAEFIK_ENTRYPOINTS=web
+# TRAEFIK_DOCKER_NETWORK=traefik_proxy
+# TRAEFIK_TLS=true
+# TRAEFIK_CERT_RESOLVER=letsencrypt
+# PDNS_API_URL=http://127.0.0.1:8081/api/v1
+# PDNS_API_KEY=replace-with-pdns-api-key
+# PDNS_SERVER_ID=localhost
+# PDNS_ZONE_ID=example.local.
+# PDNS_RECORD_TTL=60
 ```
 
 `DOCKYARD_ENCRYPTION_KEY` is used to derive an AES-256-GCM key for encrypted env values.
@@ -147,6 +157,17 @@ docker compose \
 
 The legacy compose file path remains in app settings for compatibility, but it is deprecated and is not used by the production deploy path.
 
+Generated compose files include Traefik Docker provider labels for each app domain:
+
+- `traefik.enable=true`
+- `traefik.http.routers.<app>.rule=Host(\`app.example.local\`)`
+- `traefik.http.routers.<app>.entrypoints=$TRAEFIK_ENTRYPOINTS`
+- `traefik.http.services.<app>.loadbalancer.server.port=<containerPort>`
+
+Set `TRAEFIK_DOCKER_NETWORK` when Traefik uses a shared external Docker network; Dockyard will attach the generated app service to that network and add `traefik.docker.network`.
+
+When `PDNS_API_URL`, `PDNS_API_KEY`, and `PDNS_ZONE_ID` are configured, queuing a deployment also updates PowerDNS through the Authoritative Server HTTP API. Dockyard writes an A or AAAA record for the app domain to the selected server heartbeat IP address before queuing the agent job.
+
 ## Resources
 
 Resource Providers are shared infrastructure registrations for PostgreSQL, S3-compatible storage such as MinIO, Elasticsearch, and future Redis support. Provider admin credentials are encrypted with `DOCKYARD_ENCRYPTION_KEY` using the same AES-GCM helper as app env values.
@@ -193,7 +214,7 @@ NFS managed volumes generate Docker local driver options and can be movable when
 - Authentication for the Dockyard web UI is intentionally left as a future layer.
 - Agent APIs use one shared Bearer token for the MVP.
 - Server auto-selection only uses the simple score from the spec.
-- DNS registration, reverse proxy integration, Traefik/Apache config generation, and TLS automation are not implemented yet.
+- TLS automation depends on the configured Traefik entrypoint/cert resolver and is not managed directly by Dockyard.
 - Deployment logs are stored and visible through DB/API plumbing, but the UI currently shows deployment history rather than a full log viewer.
 - CPU and memory metrics in the agent are Linux `/proc` based; non-Linux development machines report partial metrics.
 - Dockerfile builds still run trusted repository code. Dockyard is intended for trusted internal repositories, not arbitrary untrusted code.

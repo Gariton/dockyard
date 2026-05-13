@@ -13,6 +13,7 @@ import {
 import { formatDate, truncateSha } from "@/lib/format";
 import { getI18n } from "@/lib/i18n-server";
 import { listDeployments } from "@/services/deployments";
+import { publicUrlForDomain } from "@/services/public-url";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ export default async function DeploymentsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>{labels.table.app}</TableHead>
+                <TableHead>{labels.table.url}</TableHead>
                 <TableHead>{labels.table.server}</TableHead>
                 <TableHead>{labels.table.status}</TableHead>
                 <TableHead>{labels.table.ref}</TableHead>
@@ -54,6 +56,17 @@ export default async function DeploymentsPage() {
                     <Link href={`/apps/${app.id}`} className="font-medium hover:underline">
                       {app.name}
                     </Link>
+                  </TableCell>
+                  <TableCell>
+                    <a
+                      href={publicUrlForDomain(app.domain)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-mono text-xs text-primary hover:underline"
+                      aria-label={`${labels.openUrl}: ${app.domain}`}
+                    >
+                      {app.domain}
+                    </a>
                   </TableCell>
                   <TableCell>{server.hostname}</TableCell>
                   <TableCell>
@@ -72,7 +85,7 @@ export default async function DeploymentsPage() {
               ))}
               {rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-20 text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
                     {labels.empty}
                   </TableCell>
                 </TableRow>

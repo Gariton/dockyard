@@ -28,11 +28,19 @@ const items: NavItem[] = [
   { href: "/deployments", labelKey: "deployments", icon: History },
 ];
 
-export function NavLinks({ labels }: { labels: Dictionary["nav"] }) {
+export function NavLinks({
+  className,
+  labels,
+  onNavigate,
+}: {
+  className?: string;
+  labels: Dictionary["nav"];
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-1 p-3">
+    <nav className={cn("flex flex-col gap-1 p-3", className)}>
       {items.map((item) => {
         const Icon = item.icon;
         const active =
@@ -46,6 +54,7 @@ export function NavLinks({ labels }: { labels: Dictionary["nav"] }) {
               "flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
               active && "bg-muted text-foreground"
             )}
+            onClick={onNavigate}
           >
             <Icon data-icon="inline-start" />
             {labels[item.labelKey]}

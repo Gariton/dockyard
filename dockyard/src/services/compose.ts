@@ -3,6 +3,7 @@ import type {
   AppManagedVolume,
   AppRuntimeConfig,
 } from "@/db/schema";
+import { getTraefikConfig } from "@/lib/config";
 import { localVolumeHostPath } from "@/services/managed-volumes";
 
 export function generateComposeYaml(
@@ -10,6 +11,9 @@ export function generateComposeYaml(
   runtime: AppRuntimeConfig,
   volumes: AppManagedVolume[]
 ) {
+  const traefik = getTraefikConfig();
+  const routerName = traefikName(app.name);
+  const serviceName = routerName;
   const lines: string[] = [
     "services:",
     "  app:",
@@ -41,8 +45,32 @@ export function generateComposeYaml(
     "      retries: 3",
     "    labels:",
     "      - dockyard.managed=true",
-    `      - ${yamlString(`dockyard.app=${app.name}`)}`
+    `      - ${yamlString(`dockyard.app=${app.name}`)}`,
+    "      - traefik.enable=true",
+    `      - ${yamlString(`traefik.http.routers.${routerName}.rule=Host(\`${traefikHost(app.domain)}\`)`)}`,
+    `      - ${yamlString(`traefik.http.routers.${routerName}.entrypoints=${traefik.entrypoints}`)}`,
+    `      - ${yamlString(`traefik.http.services.${serviceName}.loadbalancer.server.port=${runtime.containerPort}`)}`
   );
+
+  if (traefik.network) {
+    lines.push(`      - ${yamlString(`traefik.docker.network=${traefik.network}`)}`);
+  }
+
+  if (traefik.tls) {
+    lines.push(`      - ${yamlString(`traefik.http.routers.${routerName}.tls=true`)}`);
+  }
+
+  if (traefik.certResolver) {
+    lines.push(
+      `      - ${yamlString(
+        `traefik.http.routers.${routerName}.tls.certresolver=${traefik.certResolver}`
+      )}`
+    );
+  }
+
+  if (traefik.network) {
+    lines.push("    networks:", "      - default", `      - ${traefik.network}`);
+  }
 
   if (runtime.cpuLimit || runtime.memoryLimitMb) {
     lines.push("    deploy:", "      resources:", "        limits:");
@@ -89,6 +117,10 @@ export function generateComposeYaml(
     }
   }
 
+  if (traefik.network) {
+    lines.push("networks:", `  ${traefik.network}:`, "    external: true");
+  }
+
   return `${lines.join("\n")}\n`;
 }
 
@@ -98,6 +130,18 @@ function repoContext(buildContext: string) {
 
 function nfsVolumeName(appName: string, volumeName: string) {
   return `${appName}_${volumeName}`.replace(/[^A-Za-z0-9_-]/g, "_");
+}
+
+function traefikName(appName: string) {
+  return `dockyard-${appName}`.replace(/[^A-Za-z0-9-]/g, "-").toLowerCase();
+}
+
+function traefikHost(domain: string) {
+  if (!/^[A-Za-z0-9.-]+$/.test(domain) || domain.includes("..")) {
+    throw new Error(`Invalid Traefik host domain ${domain}.`);
+  }
+
+  return domain.toLowerCase();
 }
 
 function yamlString(value: string) {

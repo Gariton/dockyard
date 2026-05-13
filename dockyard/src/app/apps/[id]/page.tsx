@@ -36,6 +36,7 @@ import {
   listResourceProviders,
 } from "@/services/resources";
 import { getI18n } from "@/lib/i18n-server";
+import { publicUrlForDomain } from "@/services/public-url";
 import { getRuntimeConfig } from "@/services/runtime-configs";
 import { listServers } from "@/services/servers";
 
@@ -403,6 +404,7 @@ export default async function AppDetailPage({ params }: PageProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>{labels.deployments.url}</TableHead>
                     <TableHead>{labels.deployments.status}</TableHead>
                     <TableHead>{labels.deployments.server}</TableHead>
                     <TableHead>{labels.deployments.gitRef}</TableHead>
@@ -415,6 +417,17 @@ export default async function AppDetailPage({ params }: PageProps) {
                 <TableBody>
                   {deployments.map(({ deployment, server: deployedServer }) => (
                     <TableRow key={deployment.id}>
+                      <TableCell>
+                        <a
+                          href={publicUrlForDomain(app.domain)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-mono text-xs text-primary hover:underline"
+                          aria-label={`${labels.deployments.openUrl}: ${app.domain}`}
+                        >
+                          {app.domain}
+                        </a>
+                      </TableCell>
                       <TableCell>
                         <StatusBadge labels={dictionary.status} status={deployment.status} />
                       </TableCell>
@@ -432,7 +445,7 @@ export default async function AppDetailPage({ params }: PageProps) {
                   ))}
                   {deployments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-20 text-center text-muted-foreground">
+                      <TableCell colSpan={8} className="h-20 text-center text-muted-foreground">
                         {labels.deployments.empty}
                       </TableCell>
                     </TableRow>

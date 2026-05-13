@@ -27,6 +27,24 @@ const nullableText = z
 
 const jsonObject = z.record(z.string(), z.unknown());
 
+const domainName = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(1)
+  .max(253)
+  .regex(/^[a-z0-9.-]+$/, "Use a hostname without scheme, path, or port.")
+  .refine((value) => !value.includes("..") && !value.startsWith(".") && !value.endsWith("."))
+  .refine((value) =>
+    value.split(".").every((label) => {
+      return (
+        label.length > 0 &&
+        label.length <= 63 &&
+        /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label)
+      );
+    })
+  );
+
 const optionalPositiveInt = (max: number) =>
   z
     .preprocess(
@@ -48,7 +66,7 @@ export const appInputSchema = z.object({
   name: appName,
   gitUrl: gitUrlSchema,
   branch: branchName,
-  domain: z.string().min(1).max(255),
+  domain: domainName,
   composeFilePath: composePath.default("compose.yaml"),
   publicPort: z.preprocess(
     (value) => (value === "" || value === null ? undefined : value),
